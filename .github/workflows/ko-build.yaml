@@ -31,4 +31,4 @@ jobs:
         env:
           VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: |
-          ko build --tags=$VERSION ./cmd/terraform-registry
+          ko build --tags=$VERSION ./cmd/terraform-registry --bare
