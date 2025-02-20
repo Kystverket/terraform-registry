@@ -7,7 +7,7 @@ on:
     branches: ['main']
 permissions:
   packages: write
-  contents: read
+  contents: write
 jobs:
   publish:
     name: Publish
@@ -37,7 +37,7 @@ jobs:
         run: |
           ko build --tags=$VERSION ./cmd/terraform-registry --bare
       - name: Tag Release
-        uses: mathieudutour/github-tag-action@v6.2
+        uses: mathieudutour/github-tag-action@v6.1
         with:
           custom_tag: ${{ steps.determine_version.outputs.semVer }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
