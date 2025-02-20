@@ -36,3 +36,8 @@ jobs:
           VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: |
           ko build --tags=$VERSION ./cmd/terraform-registry --bare
+      - name: Tag Release
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          custom_tag: ${{ steps.determine_version.outputs.semVer }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
