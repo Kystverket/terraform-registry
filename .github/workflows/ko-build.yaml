@@ -33,7 +33,7 @@ jobs:
       - uses: ko-build/setup-ko@v0.8
       - name: Build and push
         env:
-          VERSION: ${{ steps.gitversion.outputs.semVer }}
+          VERSION: ${{ steps.gitversion.outputs.majorMinorPatch }}
         run: |
           ko build --tags=$VERSION ./cmd/terraform-registry --bare
       - name: Tag Release
