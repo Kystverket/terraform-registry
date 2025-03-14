@@ -122,8 +122,11 @@ func (s *GitHubStore) GetModuleVersion(ctx context.Context, namespace, name, pro
 		return nil, fmt.Errorf("module '%s' not found", key)
 	}
 
+	versionElements := strings.Split(version, "/")
+	versionLookup := versionElements[len(versionElements)-1]
+
 	for _, v := range versions {
-		if v.Version == version {
+		if v.Version == versionLookup {
 			return v, nil
 		}
 	}
@@ -432,11 +435,17 @@ func (s *GitHubStore) ReloadCache(ctx context.Context) error {
 		for _, tag := range tags {
 			path := strings.Split(tag.GetName(), "/")
 			newTag := path[len(path)-1]
+
+			sourceUrlTag := tag.GetName()
+			if strings.Contains(sourceUrlTag, "/") {
+				sourceUrlTag = fmt.Sprintf("%s/%s", strings.Join(path[:len(path)-1], "/"), newTag)
+			}
+
 			version := strings.TrimPrefix(newTag, "v") // Terraform uses SemVer names without 'v' prefix
 			if _, err := goversion.NewSemver(version); err == nil {
 				versions = append(versions, &core.ModuleVersion{
 					Version:   version,
-					SourceURL: fmt.Sprintf("git::ssh://git@github.com/%s/%s.git?ref=%s", owner, name, tag.GetName()),
+					SourceURL: fmt.Sprintf("git::ssh://git@github.com/%s/%s.git?ref=%s", owner, name, sourceUrlTag),
 				})
 			}
 		}
