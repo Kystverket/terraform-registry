@@ -136,6 +136,63 @@ func TestGetModuleVersion(t *testing.T) {
 
 }
 
+func TestGetMonoRepoModuleVersion(t *testing.T) {
+	result := new(github.RepositoriesSearchResult)
+	total := 1
+	result.Total = &total
+	result.Repositories = []*github.Repository{
+		{
+			Name:     github.String("testrepo"),
+			FullName: github.String("test-owner/test-repo"),
+		},
+	}
+	mockedHTTPClient := mock.NewMockedHTTPClient(
+		mock.WithRequestMatch(
+			mock.GetSearchRepositories,
+			result,
+		),
+		mock.WithRequestMatch(
+			mock.GetReposTagsByOwnerByRepo,
+			[]github.RepositoryTag{
+				{
+					Name: github.String("foo/v1.0.0"),
+				},
+			},
+		),
+	)
+
+	c := github.NewClient(mockedHTTPClient)
+	store := &GitHubStore{
+		ownerFilter: "test-owner",
+		topicFilter: "test-topic",
+		client:      c,
+		moduleCache: make(map[string][]*core.ModuleVersion),
+		logger:      zap.NewNop(),
+	}
+
+	err := store.ReloadCache(context.Background())
+	if err != nil {
+		t.Fatal("Could not ReloadCache")
+	}
+
+	t.Run("returns matching version", func(t *testing.T) {
+		is := is.New(t)
+		ver, err := store.GetModuleVersion(context.Background(), "test-owner", "test-repo", "generic", "foo/1.0.0")
+		is.True(err == nil)
+		is.Equal(ver.Version, "1.0.0")
+		is.Equal(ver.SourceURL, "git::ssh://git@github.com/test-owner/test-repo.git?ref=foo/v1.0.0")
+	})
+
+	t.Run("errs when missing", func(t *testing.T) {
+		is := is.New(t)
+		ver, err := store.GetModuleVersion(context.Background(), "test-owner", "test-repo", "generic", "1.0.1")
+		is.True(err != nil)
+		is.True(ver == nil)
+		is.Equal(err.Error(), "version '1.0.1' not found for module 'test-owner/test-repo/generic'")
+	})
+
+}
+
 func TestListModuleVersions(t *testing.T) {
 	result := new(github.RepositoriesSearchResult)
 	total := 1
