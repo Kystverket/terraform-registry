@@ -430,7 +430,9 @@ func (s *GitHubStore) ReloadCache(ctx context.Context) error {
 
 		versions := make([]*core.ModuleVersion, 0)
 		for _, tag := range tags {
-			version := strings.TrimPrefix(tag.GetName(), "v") // Terraform uses SemVer names without 'v' prefix
+			path := strings.Split(tag.GetName(), "/")
+			newTag := path[len(path)-1]
+			version := strings.TrimPrefix(newTag, "v") // Terraform uses SemVer names without 'v' prefix
 			if _, err := goversion.NewSemver(version); err == nil {
 				versions = append(versions, &core.ModuleVersion{
 					Version:   version,
